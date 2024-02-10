@@ -1,0 +1,63 @@
+const User = require('../models/user')
+
+
+module.exports.profile = function(req,res){
+    return res.render('profile')
+}
+module.exports.signup = function(req,res){
+    return res.render('signup')
+}
+module.exports.signin = function(req,res){
+    return res.render('signin')
+}
+
+
+module.exports.create = function(req, res){
+    if (req.body.password != req.body.confirm_password){
+        return res.redirect('back');
+    }
+
+    User.findOne({email: req.body.email})
+        .then(user => {
+            if (!user) {
+                return User.create(req.body);
+            } else {
+                return Promise.reject('User already exists');
+            }
+        })
+        .then(newUser => {
+            return res.redirect('/users/signin');
+        })
+        .catch(err => {
+            console.error('Error in creating user:', err);
+            return res.redirect('back');
+        });
+}
+
+
+module.exports.createSession = function(req, res){
+
+    // steps to authenticate
+    // find the user
+    User.findOne({email: req.body.email})
+        .then(user => {
+            if (!user) {
+                // handle user not found
+                return res.redirect('back');
+            }
+
+            // handle password which doesn't match
+            if (user.password !== req.body.password) {
+                return res.redirect('back');
+            }
+
+            // handle session creation
+            res.cookie('user_id', user.id);
+            return res.redirect('/users/profile');
+
+        })
+        .catch(err => {
+            console.log('error in finding user in signing in', err);
+            return res.redirect('back');
+        });
+}
